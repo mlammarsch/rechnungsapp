@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Übersicht</h1>
+<div class="stats">
+  <div class="stat"><div class="value">{{ stats.invoices }}</div><div class="label">Rechnungen</div></div>
+  <div class="stat"><div class="value">{{ stats.open }}</div><div class="label">Offen</div></div>
+  <div class="stat"><div class="value">{{ fmt_eur(stats.sum_open) }}</div><div class="label">Offener Betrag</div></div>
+  <div class="stat"><div class="value">{{ fmt_eur(stats.sum_paid) }}</div><div class="label">Bezahlter Betrag</div></div>
+  <div class="stat"><div class="value">{{ fmt_eur(stats.sum_total) }}</div><div class="label">Gesamtbetrag</div></div>
+</div>
+<div class="card" style="margin-top:1.2rem">
+  <h2>Zuletzt erstellte Rechnungen</h2>
+  <table>
+    <tr><th>Nummer</th><th>Kunde</th><th>Datum</th><th>Status</th><th></th></tr>
+    {% for v in recent %}
+    <tr>
+      <td><a href="{{ url_for('invoice_detail', iid=v.id) }}">{{ v.number }}</a></td>
+      <td>{{ v.customer_name }}</td>
+      <td>{{ fmt_date_de(v.invoice_date) }}</td>
+      <td><span class="badge {{ v.status }}">{{ v.status }}</span></td>
+      <td><a class="btn secondary" href="{{ url_for('invoice_pdf', iid=v.id) }}" target="_blank" rel="noopener">PDF-Vorschau</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">Noch keine Rechnungen vorhanden.</td></tr>
+    {% endfor %}
+  </table>
+  <p style="margin-top:0.8rem"><a class="btn" href="{{ url_for('invoice_new') }}">Neue Rechnung erstellen</a></p>
+</div>
+{% endblock %}

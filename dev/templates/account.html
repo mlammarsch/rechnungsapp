@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Konto{% endblock %}
+{% block content %}
+<h1>Konto</h1>
+<div class="auth-box wide">
+  <section class="card">
+    <h2>Passwort ändern</h2>
+    <p class="section-sub">Angemeldet als <strong>{{ current_user.username }}</strong>. Nach der Änderung werden alle anderen Sitzungen beendet.</p>
+    {% for m in get_flashed_messages() %}<p class="form-ok">{{ m }}</p>{% endfor %}
+    <form method="post" class="stack" style="margin-top:1rem">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% if error %}<p class="form-error">{{ error }}</p>{% endif %}
+      {{ ui.field('Aktuelles Passwort', 'current', '', type='password', required=true, autocomplete='current-password') }}
+      {{ ui.field('Neues Passwort', 'password', '', type='password', required=true, autocomplete='new-password', minlength=min_len) }}
+      {{ ui.field('Neues Passwort wiederholen', 'confirm', '', type='password', required=true, autocomplete='new-password', minlength=min_len) }}
+      <p class="hint">Mindestens {{ min_len }} Zeichen.</p>
+      <div class="row-actions"><button class="btn" type="submit">Passwort speichern</button></div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>API-Zugänge (MCP)</h2>
+    <p class="section-sub">Mit einem Token greift ein MCP-Client (z. B. Claude) auf die Rechnungsverwaltung zu. Endpunkt: <code>{{ mcp_url }}</code></p>
+    {% if new_token %}
+      <div class="token-new">
+        <p><strong>Neues Token – wird nur jetzt angezeigt.</strong> Jetzt kopieren und sicher ablegen.</p>
+        <input type="text" readonly value="{{ new_token }}" class="token-value" onfocus="this.select()">
+        <p class="hint">Beispiel für Claude Code:<br><code>claude mcp add --transport http rechnungsapp {{ mcp_url }} --header "Authorization: Bearer {{ new_token }}"</code></p>
+      </div>
+    {% endif %}
+    {% if token_error %}<p class="form-error">{{ token_error }}</p>{% endif %}
+    {% if tokens %}
+    <table class="token-table">
+      <thead><tr><th>Name</th><th>Token</th><th>Rechte</th><th>Läuft ab</th><th>Zuletzt benutzt</th><th></th></tr></thead>
+      <tbody>
+      {% for t in tokens %}
+        <tr>
+          <td>{{ t.name }}</td>
+          <td><code>{{ t.prefix }}…</code></td>
+          <td>{{ 'nur lesen' if t.scope == 'read' else 'voll' }}</td>
+          <td>{% if not t.expires_at %}nie{% elif t.expires_at <= now %}<span class="form-error" style="padding:0.1rem 0.5rem">abgelaufen</span>{% else %}{{ t.expires_at[:10] }}{% endif %}</td>
+          <td>{{ t.last_used_at[:16] if t.last_used_at else '–' }}</td>
+          <td>
+            <form method="post" action="{{ url_for('token_revoke', tid=t.id) }}" style="margin:0"
+                  onsubmit="return confirm('Token wirklich widerrufen?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="btn danger sm" type="submit">Widerrufen</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="hint">Noch keine Tokens angelegt.</p>{% endif %}
+    <form method="post" action="{{ url_for('token_create') }}" class="stack" style="margin-top:1.5rem">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <h3 style="margin:0;font-size:1rem">Neues Token</h3>
+      {{ ui.field('Name (z. B. Claude Desktop)', 'name', '', required=true, maxlength='60') }}
+      <div class="grid2">
+        {% call ui.select('Rechte', 'scope') %}
+          <option value="full">Voll (lesen und ändern)</option>
+          <option value="read">Nur lesen</option>
+        {% endcall %}
+        {% call ui.select('Gültigkeit', 'expiry') %}
+          <option value="30">30 Tage</option>
+          <option value="90" selected>90 Tage</option>
+          <option value="365">1 Jahr</option>
+          <option value="never">Unbegrenzt</option>
+        {% endcall %}
+      </div>
+      <div class="row-actions"><button class="btn" type="submit">Token erzeugen</button></div>
+    </form>
+  </section>
+</div>
+{% endblock %}

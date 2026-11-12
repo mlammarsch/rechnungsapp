@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Rechnungsverwaltung{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body data-theme="light">
+  <nav class="nav">
+    <span class="brand">Rechnungsverwaltung</span>
+    {% if current_user %}
+    <a href="{{ url_for('index') }}">Übersicht</a>
+    <a href="{{ url_for('customers') }}">Kunden</a>
+    <a href="{{ url_for('invoices') }}">Rechnungen</a>
+    <a href="{{ url_for('settings_view') }}">Einstellungen</a>
+    <form class="nav-search" method="get" action="{{ url_for('search') }}">
+      <input type="search" name="q" value="{{ q or '' }}" placeholder="Suche …" aria-label="Suche">
+    </form>
+    <a href="{{ url_for('account') }}" class="nav-user" title="Angemeldet als {{ current_user.username }}">Konto &amp; API</a>
+    <form method="post" action="{{ url_for('logout') }}" class="nav-logout">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="nav-link-btn">Abmelden</button>
+    </form>
+    {% endif %}
+    <button id="theme-toggle" class="theme-toggle" aria-label="Dark Mode umschalten" title="Dark Mode">🌙</button>
+  </nav>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <div id="hint-modal" class="hint-modal">
+    <div class="hint-modal-content">
+      <h3>Information</h3>
+      <p id="hint-text"></p>
+      <button class="hint-modal-close">Schließen</button>
+    </div>
+  </div>
+  <script>
+    // Dark Mode Toggle
+    const themeToggle = document.getElementById('theme-toggle');
+    const body = document.body;
+    const savedTheme = localStorage.getItem('theme') || 'light';
+
+    body.setAttribute('data-theme', savedTheme);
+    updateThemeToggle(savedTheme);
+
+    function updateThemeToggle(theme) {
+      themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = body.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      body.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeToggle(newTheme);
+    });
+
+    // Info Icon Modal
+    const modal = document.getElementById('hint-modal');
+    const hintText = document.getElementById('hint-text');
+    const closeBtn = document.querySelector('.hint-modal-close');
+
+    document.querySelectorAll('.info-icon').forEach(icon => {
+      icon.addEventListener('click', (e) => {
+        hintText.textContent = icon.dataset.hint;
+        modal.classList.add('open');
+        e.stopPropagation();
+      });
+    });
+
+    closeBtn.addEventListener('click', () => {
+      modal.classList.remove('open');
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('open');
+      }
+    });
+  </script>
+</body>
+</html>

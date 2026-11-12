@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}{{ 'Kunde bearbeiten' if customer else 'Neuer Kunde' }}{% endblock %}
+{% block content %}
+<h1>{{ 'Kunde bearbeiten' if customer else 'Neuer Kunde' }}</h1>
+<form method="post" class="form-page narrow">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% call ui.section('Kontakt &amp; Adresse'|safe, ('Kundennummer: ' ~ customer.number) if customer and customer.number else 'Die Kundennummer wird automatisch vergeben.') %}
+    {% if error %}<p class="form-error">{{ error }}</p>{% endif %}
+    {{ ui.customer_fields(customer) }}
+    {% if not customer and pattern %}<p class="hint">Schema: <code>{{ pattern }}</code></p>{% endif %}
+  {% endcall %}
+  <div class="row-actions">
+    <button class="btn" type="submit">{{ 'Änderungen speichern' if customer else 'Kunde speichern' }}</button>
+    <a class="btn tonal" href="{{ url_for('customers') }}">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

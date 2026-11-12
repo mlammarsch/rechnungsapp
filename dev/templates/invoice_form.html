@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}{% if inv %}Rechnung {{ inv.number }} bearbeiten{% else %}Neue Rechnung{% endif %}{% endblock %}
+{% block content %}
+<h1>{% if inv %}Rechnung {{ inv.number }} bearbeiten{% else %}Neue Rechnung{% endif %}</h1>
+<form method="post" id="invoice-form" class="form-page">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% call ui.section('Rechnungsdaten', ('Die Rechnungsnummer bleibt unverändert. Nach dem Markieren als „bezahlt“ ist die Rechnung gesperrt.') if inv else ('Rechnungsnummer wird automatisch vergeben (Schema: ' ~ pattern ~ '). Standard-Zahlungsfrist: ' ~ due_days ~ ' Tage.')) %}
+    <div class="grid2">
+      <div class="with-action">
+        {% call ui.select('Kunde', 'customer_id', required=true, id='customer-select') %}
+          <option value="">– Kunde wählen –</option>
+          {% for c in customers %}
+          <option value="{{ c.id }}"{% if v.customer_id == c.id %} selected{% endif %}>{{ c.number }} – {{ c.name }}{% if c.company %} ({{ c.company }}){% endif %}</option>
+          {% endfor %}
+        {% endcall %}
+        <button type="button" class="btn tonal" id="new-customer-btn" title="Neuen Kunden anlegen">+ Neu</button>
+      </div>
+      {{ ui.field('Status', '', 'offen', disabled=true) }}
+      {{ ui.date_field('Rechnungsdatum', 'invoice_date', v.invoice_date, required=true) }}
+      {{ ui.date_field('Leistungsdatum', 'service_date', v.service_date) }}
+      {{ ui.date_field('Fälligkeitsdatum', 'due_date', v.due_date, required=true) }}
+    </div>
+    {{ ui.textarea('Notizen (erscheint auf der Rechnung)', 'notes', v.notes, rows=2) }}
+  {% endcall %}
+
+  {% call ui.section('Rechnungspositionen') %}
+    <table class="items-table" id="items">
+      <tr><th style="width:5%">Pos.</th><th>Beschreibung</th><th style="width:10%">Menge</th>
+          <th style="width:14%">Einzelpreis (€)</th><th style="width:9%">Rabatt (%)</th><th style="width:14%">Summe</th><th style="width:5%"></th></tr>
+    </table>
+    <p class="add-row"><button type="button" class="btn tonal" id="add-row">+ Position hinzufügen</button></p>
+  {% endcall %}
+
+  {% call ui.section('Gesamtrabatt &amp; Summe'|safe) %}
+    <div class="grid2">
+      {{ ui.field('Rabatt auf Gesamtbetrag (%)', 'discount_percent', '%g'|format(v.discount_percent)|replace('.', ','), id='disc-pct') }}
+      {{ ui.field('Zusätzlicher Abzug (€)', 'discount_amount', '%g'|format(v.discount_amount)|replace('.', ','), id='disc-amt') }}
+    </div>
+    <table class="totals"><tr><td class="num">Zwischensumme Positionen:</td><td class="num" id="sum-sub">0,00 €</td></tr>
+      <tr class="grand"><td class="num"><b>Rechnungsbetrag:</b></td><td class="num" id="sum-total"><b>0,00 €</b></td></tr></table>
+  {% endcall %}
+
+  <div class="row-actions">
+    <button class="btn" type="submit">Rechnung speichern</button>
+    <a class="btn tonal" href="{{ url_for('invoices') }}">Abbrechen</a>
+  </div>
+</form>
+<script>
+// Kalender-Picker: Text bleibt TT.MM.JJJJ, der native Picker liefert JJJJ-MM-TT
+document.querySelectorAll('.date-field').forEach(w => {
+  const txt = w.querySelector('input[type=text]'), nat = w.querySelector('.date-native');
+  const toIso = v => { const m = v.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})$/); if (!m) return '';
+    const y = m[3].length === 2 ? '20' + m[3] : m[3]; return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; };
+  w.querySelector('.cal-btn').addEventListener('click', () => {
+    nat.value = toIso(txt.value);
+    if (nat.showPicker) nat.showPicker(); else nat.focus();
+  });
+  nat.addEventListener('change', () => {
+    if (!nat.value) return;
+    const [y, m, d] = nat.value.split('-');
+    txt.value = `${d}.${m}.${y}`;
+    txt.dispatchEvent(new Event('input', {bubbles: true}));
+  });
+});
+function addRow(item) {
+  const table = document.getElementById('items');
+  const rows = table.querySelectorAll('tr');
+  const pos = rows.length; // header is row 0
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${pos}</td>
+    <td><input type="text" name="description" required></td>
+    <td><input type="text" name="quantity" class="qty" value="1"></td>
+    <td><input type="text" name="unit_price" class="price" value="0"></td>
+    <td><input type="text" name="discount" class="disc" value="0"></td>
+    <td class="line-total">0,00 €</td>
+    <td><button type="button" class="btn danger sm" onclick="this.closest('tr').remove();renumber();updateTotals()">×</button></td>`;
+  table.appendChild(tr);
+  tr.querySelectorAll('.qty, .price, .disc').forEach(el => el.addEventListener('input', () => updateRow(tr)));
+  if (item) {
+    const de = n => String(n).replace('.', ',');
+    tr.querySelector('[name=description]').value = item.description;
+    tr.querySelector('.qty').value = de(item.quantity);
+    tr.querySelector('.price').value = de(item.unit_price);
+    tr.querySelector('.disc').value = de(item.discount);
+  }
+  updateRow(tr);
+}
+function parseDe(v) { return parseFloat((v || '0').replace(',', '.')) || 0; }
+function fmt(v) { return v.toFixed(2).replace('.', ',') + ' €'; }
+function updateRow(tr) {
+  const q = parseDe(tr.querySelector('.qty').value);
+  const p = parseDe(tr.querySelector('.price').value);
+  const d = Math.min(Math.max(parseDe(tr.querySelector('.disc').value), 0), 100);
+  tr.querySelector('.line-total').textContent = fmt(q * p * (1 - d / 100));
+  updateTotals();
+}
+function updateTotals() {
+  let sub = 0;
+  document.querySelectorAll('#items tr').forEach((tr, i) => {
+    if (i === 0) return;
+    const d = Math.min(Math.max(parseDe(tr.querySelector('.disc').value), 0), 100);
+    sub += Math.round(parseDe(tr.querySelector('.qty').value) * parseDe(tr.querySelector('.price').value) * (1 - d / 100) * 100) / 100;
+  });
+  const pct = Math.min(Math.max(parseDe(document.getElementById('disc-pct').value), 0), 100);
+  const amt = Math.max(parseDe(document.getElementById('disc-amt').value), 0);
+  document.getElementById('sum-sub').textContent = fmt(sub);
+  document.getElementById('sum-total').innerHTML = '<b>' + fmt(Math.max(sub * (1 - pct / 100) - amt, 0)) + '</b>';
+}
+document.getElementById('disc-pct').addEventListener('input', updateTotals);
+document.getElementById('disc-amt').addEventListener('input', updateTotals);
+function renumber() {
+  document.querySelectorAll('#items tr').forEach((tr, i) => { if (i > 0) tr.firstElementChild.textContent = i; });
+}
+document.getElementById('add-row').addEventListener('click', () => addRow());
+const initialItems = {{ items|tojson }};
+if (initialItems.length) initialItems.forEach(addRow); else addRow();
+updateTotals();
+</script>
+<dialog id="customer-dialog" class="modal">
+  <form id="customer-dialog-form" method="dialog">
+    <h2>Neuer Kunde</h2>
+    <p class="section-sub">Die Kundennummer wird automatisch vergeben (Schema: <code>{{ customer_pattern }}</code>).</p>
+    {{ ui.customer_fields() }}
+    <p class="form-error" id="customer-dialog-error"></p>
+    <div class="row-actions">
+      <button class="btn" type="submit">Kunde speichern</button>
+      <button class="btn tonal" type="button" id="customer-dialog-cancel">Abbrechen</button>
+    </div>
+  </form>
+</dialog>
+<script>
+(function () {
+  const dlg = document.getElementById('customer-dialog');
+  const form = document.getElementById('customer-dialog-form');
+  const err = document.getElementById('customer-dialog-error');
+  document.getElementById('new-customer-btn').addEventListener('click', () => { form.reset(); err.textContent = ''; dlg.showModal(); });
+  document.getElementById('customer-dialog-cancel').addEventListener('click', () => dlg.close());
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await fetch({{ url_for('customer_new')|tojson }}, {
+      method: 'POST', headers: {'X-Requested-With': 'fetch', 'X-CSRF-Token': {{ csrf_token|tojson }}}, body: new FormData(form)
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) { err.textContent = data.error || 'Speichern fehlgeschlagen.'; return; }
+    const sel = document.getElementById('customer-select');
+    const opt = new Option(data.label, data.id, true, true);
+    sel.add(opt);
+    dlg.close();
+  });
+})();
+</script>
+{% endblock %}

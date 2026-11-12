@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Suche{% endblock %}
+{% block content %}
+<h1>Suche{% if q %}: „{{ q }}“{% endif %}</h1>
+{% if not q %}
+<div class="card"><p class="hint">Suchbegriff oben eingeben. Mehrere Begriffe werden mit UND verknüpft; durchsucht werden Kunden (Nummer, Firma, Name, Adresse, Kontakt, Notizen) und Rechnungen (Nummer, Kunde, Datum, Positionen, Notizen, Status, Betrag).</p></div>
+{% else %}
+<div class="card">
+  <h2>Kunden ({{ customers|length }})</h2>
+  <table>
+    <tr><th>Nummer</th><th>Name / Firma</th><th>Ort</th><th>E-Mail</th></tr>
+    {% for c in customers %}
+    <tr>
+      <td>{{ c.number }}</td>
+      <td>{{ c.name }}{% if c.company %}<br><span class="hint">{{ c.company }}</span>{% endif %}</td>
+      <td>{{ c.zip }} {{ c.city }}</td>
+      <td>{{ c.email }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">Keine Kunden gefunden.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+<div class="card" style="margin-top:1.2rem">
+  <h2>Rechnungen ({{ invoices|length }})</h2>
+  <table>
+    <tr><th>Nummer</th><th>Kunde</th><th>Datum</th><th class="num">Betrag</th><th>Status</th><th></th></tr>
+    {% for v in invoices %}
+    <tr>
+      <td><a href="{{ url_for('invoice_detail', iid=v.id) }}">{{ v.number }}</a></td>
+      <td>{{ v.customer_name }}</td>
+      <td>{{ fmt_date_de(v.invoice_date) }}</td>
+      <td class="num">{{ fmt_eur(v.total) }}</td>
+      <td><span class="badge {{ v.status }}">{{ v.status }}</span></td>
+      <td><a class="btn secondary" href="{{ url_for('invoice_pdf', iid=v.id) }}" target="_blank" rel="noopener">PDF-Vorschau</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">Keine Rechnungen gefunden.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+{% endblock %}

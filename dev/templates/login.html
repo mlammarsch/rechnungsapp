@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}{{ 'Registrieren' if mode == 'register' else 'Anmelden' }}{% endblock %}
+{% block content %}
+<div class="auth-box">
+  <section class="card">
+    {% if mode == 'register' %}
+      <h1>Benutzer anlegen</h1>
+      <p class="section-sub">Es ist noch kein Benutzer vorhanden. Lege jetzt den einzigen Zugang zur Anwendung an – danach ist die Registrierung gesperrt.</p>
+    {% else %}
+      <h1>Anmelden</h1>
+    {% endif %}
+    <form method="post" action="{{ url_for('register' if mode == 'register' else 'login') }}" class="stack" autocomplete="on">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+      {% if error %}<p class="form-error">{{ error }}</p>{% endif %}
+      {{ ui.field('Benutzername', 'username', username or '', required=true, autocomplete='username', autofocus='autofocus', maxlength='50') }}
+      {% if mode == 'register' %}
+        {{ ui.field('Passwort', 'password', '', type='password', required=true, autocomplete='new-password', minlength=min_len) }}
+        {{ ui.field('Passwort wiederholen', 'confirm', '', type='password', required=true, autocomplete='new-password', minlength=min_len) }}
+        <p class="hint">Mindestens {{ min_len }} Zeichen. Tipp: ein langer Satz ist sicherer als ein kurzes, kompliziertes Passwort.</p>
+      {% else %}
+        {{ ui.field('Passwort', 'password', '', type='password', required=true, autocomplete='current-password') }}
+      {% endif %}
+      <div class="row-actions">
+        <button class="btn" type="submit">{{ 'Benutzer anlegen' if mode == 'register' else 'Anmelden' }}</button>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Einstellungen{% endblock %}
+{% block content %}
+<h1>Einstellungen</h1>
+<form method="post" class="form-page">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+  {% call ui.section('Firmendaten', 'Rechnungssteller – erscheint im Briefkopf des PDFs.') %}
+  <div class="grid2">
+    {{ ui.field('Firmenname', 'company_name', s.company_name) }}
+    {{ ui.field('Straße', 'company_street', s.company_street) }}
+    {{ ui.field('PLZ', 'company_zip', s.company_zip) }}
+    {{ ui.field('Ort', 'company_city', s.company_city) }}
+    {{ ui.field('E-Mail', 'company_email', s.company_email, type='email') }}
+    {{ ui.field('Telefon', 'company_phone', s.company_phone) }}
+    {{ ui.field('Steuernummer', 'tax_id', s.tax_id) }}
+    {{ ui.field('USt-IdNr.', 'ust_id', s.ust_id) }}
+  </div>
+  {% endcall %}
+
+  {% call ui.section('Bankverbindung', 'Wird im Zahlungsbereich der Rechnung ausgegeben.') %}
+  <div class="grid2">
+    {{ ui.field('Kontoinhaber', 'account_holder', s.account_holder) }}
+    {{ ui.field('Bank (optional)', 'bank_name', s.bank_name) }}
+    {{ ui.field('IBAN', 'iban', s.iban) }}
+    {{ ui.field('BIC', 'bic', s.bic) }}
+  </div>
+  {% endcall %}
+
+  {% call ui.section('PDF-Layout &amp; Texte'|safe, 'Titel und Standardtexte der Rechnung.') %}
+  {{ ui.field('Dokumenttitel', 'doc_title', s.doc_title, hint='Überschrift auf dem PDF, z. B. „Rechnung“. Leer = „Rechnung“.') }}
+  {{ ui.textarea('Dankes-/Zahlungshinweis', 'footer_note', s.footer_note, rows=2) }}
+  {{ ui.textarea('Steuerhinweis (Kleinunternehmerregelung)', 'small_business_note', s.small_business_note, rows=2) }}
+  <p class="hint">Beide Texte erscheinen im PDF unter „Hinweise und Anmerkungen“, nach den rechnungsspezifischen Notizen.</p>
+  {% endcall %}
+
+  {% call ui.section('Nummernkreise &amp; Zahlungsfrist'|safe, 'Schemata und Zähler für Rechnungen und Kunden.') %}
+  <div class="grid2">
+    {% call ui.subsection('Rechnungsnummern') %}
+      {{ ui.field('Schema', 'invoice_number_pattern', s.invoice_number_pattern, hint='Platzhalter: {YYYY} {YY} {MM} {M} {DD} {D} für Datum, {N}, {NN}, {NNN}, {NNNN} … für den automatischen Zähler (Breite = Anzahl der N). Beispiel: RG-{NNNNN} → RG-00038') }}
+      {{ ui.field('Startwert', 'invoice_number_start', s.invoice_number_start, type='number', min='0', hint='Erste vergebene Nummer. Danach: Startwert + Anzahl vorhandener Rechnungen.') }}
+      {{ ui.switch('Zähler jährlich zurücksetzen', 'invoice_number_reset_yearly', s.invoice_number_reset_yearly == '1', 'Aus = fortlaufend über alle Jahre. An = zählt pro Rechnungsjahr ab dem Startwert neu.') }}
+    {% endcall %}
+    {% call ui.subsection('Kundennummern') %}
+      {{ ui.field('Schema', 'customer_number_pattern', s.customer_number_pattern, hint='Gleiche Platzhalter wie bei Rechnungen. Beispiel: KD-{NNNN} → KD-0001') }}
+      {{ ui.field('Startwert', 'customer_number_start', s.customer_number_start, type='number', min='0', hint='Erste vergebene Nummer. Danach: Startwert + Anzahl vorhandener Kunden.') }}
+      {{ ui.switch('Zähler jährlich zurücksetzen', 'customer_number_reset_yearly', s.customer_number_reset_yearly == '1') }}
+    {% endcall %}
+    {% call ui.subsection('Zahlung') %}
+      {{ ui.field('Zahlungsfrist (Tage)', 'payment_due_days', s.payment_due_days, type='number', min='0', hint='Vorschlag für das Fälligkeitsdatum bei neuen Rechnungen (jederzeit änderbar).') }}
+    {% endcall %}
+  </div>
+  {% endcall %}
+
+  <div class="row-actions">
+    <button class="btn" type="submit">Einstellungen speichern</button>
+  </div>
+</form>
+{% endblock %}

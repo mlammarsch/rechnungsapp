@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Kunden{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Kunden</h1>
+  <a class="btn" href="{{ url_for('customer_new') }}">+ Neuer Kunde</a>
+</div>
+<div class="card">
+  <table>
+    <tr><th>Nummer</th><th>Name / Firma</th><th>Ort</th><th>E-Mail</th><th></th></tr>
+    {% for c in customers %}
+    <tr>
+      <td>{{ c.number }}</td>
+      <td>{{ c.name }}{% if c.company %}<br><span class="hint">{{ c.company }}</span>{% endif %}</td>
+      <td>{{ c.zip }} {{ c.city }}</td>
+      <td>{{ c.email }}</td>
+      <td class="actions">
+        <a class="btn tonal sm" href="{{ url_for('customer_edit', cid=c.id) }}">Bearbeiten</a>
+        <form method="post" action="{{ url_for('customer_delete', cid=c.id) }}" style="display:inline"
+              onsubmit="return confirm('Kunde {{ c.number }} wirklich löschen?');">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="btn danger sm" type="submit">Löschen</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">Noch keine Kunden vorhanden.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,88 @@
+{# Gemeinsame UI-Bausteine (Material/Google-Look): Abschnitte, Felder, Schalter #}
+
+{% macro section(title, subtitle='') %}
+<section class="card section">
+  <header class="section-head">
+    <h2>{{ title }}</h2>
+    {% if subtitle %}<p class="section-sub">{{ subtitle }}</p>{% endif %}
+  </header>
+  <div class="section-body">{{ caller() }}</div>
+</section>
+{% endmacro %}
+
+{% macro subsection(title) %}
+<div class="subsection">
+  <h3>{{ title }}</h3>
+  {{ caller() }}
+</div>
+{% endmacro %}
+
+{% macro hint_icon(text) %}<button type="button" class="info-icon" data-hint="{{ text }}" aria-label="Hinweis anzeigen">i</button>{% endmacro %}
+
+{# Outlined-Textfeld mit schwebendem Label. raised=true, wenn ein echter Platzhalter angezeigt wird. #}
+{% macro field(label, name, value='', type='text', required=false, hint='', raised=false, disabled=false) %}
+<div class="field{% if raised %} raised{% endif %}">
+  <input type="{{ type }}" {% if name %}name="{{ name }}"{% endif %} value="{{ value if value is not none else '' }}"
+         placeholder="{{ kwargs.placeholder or ' ' }}"{% if required %} required{% endif %}{% if disabled %} disabled{% endif %}
+         {%- for k, v in kwargs.items() if k != 'placeholder' %} {{ k }}="{{ v }}"{% endfor %}>
+  <label>{{ label }}{% if required %} *{% endif %}</label>
+  {% if hint %}{{ hint_icon(hint) }}{% endif %}
+</div>
+{% endmacro %}
+
+{% macro textarea(label, name, value='', rows=3) %}
+<div class="field">
+  <textarea name="{{ name }}" rows="{{ rows }}" placeholder=" ">{{ value if value is not none else '' }}</textarea>
+  <label>{{ label }}</label>
+</div>
+{% endmacro %}
+
+{# Auswahlfeld: Optionen kommen aus dem call-Block #}
+{% macro select(label, name, required=false, id='') %}
+<div class="field raised select">
+  <select name="{{ name }}"{% if id %} id="{{ id }}"{% endif %}{% if required %} required{% endif %}{% if kwargs.onchange %} onchange="{{ kwargs.onchange }}"{% endif %}>{{ caller() }}</select>
+  <label>{{ label }}{% if required %} *{% endif %}</label>
+</div>
+{% endmacro %}
+
+{% macro switch(label, name, checked=false, hint='') %}
+<label class="switch">
+  <input type="checkbox" name="{{ name }}" value="1"{% if checked %} checked{% endif %}>
+  <span class="track"><span class="thumb"></span></span>
+  <span class="switch-text">{{ label }}</span>
+  {% if hint %}{{ hint_icon(hint) }}{% endif %}
+</label>
+{% endmacro %}
+
+{# Datumsfeld: Textfeld (TT.MM.JJJJ) + Kalender-Button, der einen nativen Datepicker öffnet #}
+{% macro date_field(label, name, value='', required=false) %}
+<div class="field raised date-field">
+  <input type="text" name="{{ name }}" value="{{ value or '' }}" placeholder="TT.MM.JJJJ"{% if required %} required{% endif %}
+         inputmode="numeric" pattern="\d{1,2}\.\d{1,2}\.(\d{2}|\d{4})" title="TT.MM.JJJJ" autocomplete="off">
+  <label>{{ label }}{% if required %} *{% endif %}</label>
+  <button type="button" class="cal-btn" aria-label="Kalender öffnen" title="Kalender öffnen">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+  </button>
+  <input type="date" class="date-native" tabindex="-1" aria-hidden="true">
+</div>
+{% endmacro %}
+
+{# Felder eines Kunden – gemeinsam für Seite und Dialog. Eine Eingabe pro Zeile, nur PLZ/Ort teilen sich eine. #}
+{% macro customer_fields(c=none) %}
+<div class="stack">
+  {{ field('Firma', 'company', c.company if c else '') }}
+  {{ field('Name', 'name', c.name if c else '', required=true) }}
+  {{ field('Straße', 'street', c.street if c else '') }}
+  <div class="grid-plzort">
+    {{ field('PLZ', 'zip', c.zip if c else '') }}
+    {{ field('Ort', 'city', c.city if c else '') }}
+  </div>
+</div>
+<div class="stack group-gap">
+  {{ field('E-Mail', 'email', c.email if c else '', type='email') }}
+  {{ field('Telefon', 'phone', c.phone if c else '', type='tel') }}
+</div>
+<div class="stack group-gap">
+  {{ textarea('Notizen', 'notes', c.notes if c else '', rows=3) }}
+</div>
+{% endmacro %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Rechnung {{ inv.number }}{% endblock %}
+{% block content %}
+<h1>Rechnung {{ inv.number }}</h1>
+<div class="card">
+  <div class="grid2">
+    <div>
+      <h2>Kunde <span class="detail-sub" style="display:inline">· {{ inv.customer_number }}</span></h2>
+      <p class="detail-meta">
+        {% if inv.company %}<b>{{ inv.company }}</b><br>{% endif %}
+        {{ inv.name }}<br>
+        {{ inv.street }}<br>
+        {{ inv.zip }} {{ inv.city }}
+      </p>
+    </div>
+    <div>
+      <h2>Rechnungsdaten</h2>
+      <p class="detail-meta">
+        Rechnungsnummer: <b>{{ inv.number }}</b><br>
+        Rechnungsdatum: {{ fmt_date_de(inv.invoice_date) }}<br>
+        {% if inv.service_date %}Leistungsdatum: {{ fmt_date_de(inv.service_date) }}<br>{% endif %}
+        Fälligkeitsdatum: {{ fmt_date_de(inv.due_date) }}
+      </p>
+      <div class="detail-meta status-row">
+        Status: <span class="badge {{ inv.status }}">{{ inv.status }}</span>
+        <form method="post" action="{{ url_for('invoice_status', iid=inv.id) }}" style="display:inline;margin:0">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="status" value="{{ 'bezahlt' if inv.status == 'offen' else 'offen' }}">
+          <button class="btn tonal sm" type="submit">
+            {{ 'Als bezahlt markieren' if inv.status == 'offen' else 'Als offen markieren' }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <h2>Positionen</h2>
+  <table>
+    <tr><th>Pos.</th><th>Beschreibung</th><th class="num">Menge</th><th class="num">Einzelpreis</th><th class="num">Rabatt</th><th class="num">Summe</th></tr>
+    {% for i in items %}
+    <tr>
+      <td>{{ i.position }}</td>
+      <td>{{ i.description }}</td>
+      <td class="num">{{ i.quantity }}</td>
+      <td class="num">{{ fmt_eur(i.unit_price) }}</td>
+      <td class="num">{{ '%g'|format(i.discount) }}%</td>
+      <td class="num">{{ fmt_eur(i.total) }}</td>
+    </tr>
+    {% endfor %}
+    {% if discount_total > 0 %}
+    <tr><td colspan="5" class="num">Zwischensumme</td><td class="num">{{ fmt_eur(subtotal) }}</td></tr>
+    <tr><td colspan="5" class="num">Gesamtrabatt{% if inv.discount_percent %} ({{ '%g'|format(inv.discount_percent) }}%){% endif %}</td><td class="num">-{{ fmt_eur(discount_total) }}</td></tr>
+    {% endif %}
+    <tr><td colspan="5" class="num"><b>Rechnungsbetrag</b></td><td class="num"><b>{{ fmt_eur(total) }}</b></td></tr>
+  </table>
+  <p class="detail-tax">Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.</p>
+  {% if inv.notes %}<p class="detail-note"><b>Notizen:</b> {{ inv.notes }}</p>{% endif %}
+
+  <div class="row-actions">
+    <a class="btn" href="{{ url_for('invoice_pdf', iid=inv.id, download=1) }}">Als PDF exportieren</a>
+    <a class="btn secondary" href="{{ url_for('invoice_pdf', iid=inv.id) }}" target="_blank" rel="noopener">PDF-Vorschau</a>
+    {% if inv.status == 'offen' %}
+    <a class="btn secondary" href="{{ url_for('invoice_edit', iid=inv.id) }}">Bearbeiten</a>
+    {% else %}
+    <span class="hint" style="align-self:center">🔒 Bezahlt – gesperrt (zum Bearbeiten erst wieder als offen markieren)</span>
+    {% endif %}
+    <form method="post" action="{{ url_for('invoice_delete', iid=inv.id) }}" style="display:inline"
+          onsubmit="return confirm('Rechnung {{ inv.number }} wirklich löschen?');">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn danger" type="submit">Löschen</button>
+    </form>
+    <a class="btn secondary" href="{{ url_for('invoices') }}">Zurück</a>
+  </div>
+</div>
+
+{% endblock %}

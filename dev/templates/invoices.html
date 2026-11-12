@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Rechnungen{% endblock %}
+{% macro inv_table(rows) %}
+  <table>
+    <tr><th>Nummer</th><th>Kunde</th><th>Datum</th><th>Fällig</th><th class="num">Betrag</th><th>Status</th><th></th></tr>
+    {% for v in rows %}
+    <tr>
+      <td><a href="{{ url_for('invoice_detail', iid=v.id) }}">{{ v.number }}</a></td>
+      <td>{{ v.customer_name }}</td>
+      <td>{{ fmt_date_de(v.invoice_date) }}</td>
+      <td>{{ fmt_date_de(v.due_date) }}</td>
+      <td class="num">{{ fmt_eur(v.total) }}</td>
+      <td><span class="badge {{ v.status }}">{{ v.status }}</span></td>
+      <td><a class="btn secondary" href="{{ url_for('invoice_pdf', iid=v.id) }}" target="_blank" rel="noopener">PDF-Vorschau</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">Keine Rechnungen vorhanden.</td></tr>
+    {% endfor %}
+  </table>
+{% endmacro %}
+{% block content %}
+<h1>Rechnungen</h1>
+<div class="card">
+  <form method="get" class="filter-bar">
+    <div><label>Kunde</label>
+      <select name="customer" onchange="this.form.submit()">
+        <option value="">Alle Kunden</option>
+        {% for c in customers %}
+        <option value="{{ c.id }}"{% if customer_id == c.id|string %} selected{% endif %}>{{ c.number }} – {{ c.name }}{% if c.company %} ({{ c.company }}){% endif %}</option>
+        {% endfor %}
+      </select></div>
+    <div><label>Jahr</label>
+      <select name="year" onchange="this.form.submit()">
+        {% for y in years %}<option value="{{ y }}"{% if year == y %} selected{% endif %}>{{ y }}</option>{% endfor %}
+        <option value="all"{% if year == 'all' %} selected{% endif %}>Alle Jahre</option>
+      </select></div>
+    <div><label class="inline"><input type="checkbox" name="group" value="1"{% if group %} checked{% endif %} onchange="this.form.submit()"> Nach Kunde gruppieren</label></div>
+  </form>
+
+  <div class="stats" style="margin-top:1rem">
+    <div class="stat"><div class="value">{{ fmt_eur(stats.total) }}</div><div class="label">Umsatz gesamt ({{ stats.count }} Rechnungen)</div></div>
+    <div class="stat"><div class="value">{{ fmt_eur(stats.paid) }}</div><div class="label">Bezahlt</div></div>
+    <div class="stat"><div class="value">{{ fmt_eur(stats.open) }}</div><div class="label">Offen</div></div>
+  </div>
+
+  {% if group %}
+    {% for g in groups %}
+    <h2 style="margin-top:1.4rem">{{ g.company or g.name }}{% if g.company %} <span class="hint">{{ g.name }}</span>{% endif %}</h2>
+    <p class="hint">{{ g.stats.count }} Rechnungen · Gesamt <b>{{ fmt_eur(g.stats.total) }}</b> · Bezahlt {{ fmt_eur(g.stats.paid) }} · Offen {{ fmt_eur(g.stats.open) }}</p>
+    {{ inv_table(g.invoices) }}
+    {% else %}
+    <p style="margin-top:1rem">Keine Rechnungen für diese Auswahl.</p>
+    {% endfor %}
+  {% else %}
+    <div style="margin-top:1rem">{{ inv_table(invoices) }}</div>
+  {% endif %}
+  <p style="margin-top:0.8rem"><a class="btn" href="{{ url_for('invoice_new') }}">Neue Rechnung erstellen</a></p>
+</div>
+{% endblock %}
