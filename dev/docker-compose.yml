@@ -1,0 +1,13 @@
+services:
+  rechnungsapp:
+    image: mlammarsch/rechnungsapp:latest
+    container_name: rechnungsapp
+    restart: unless-stopped
+    environment:
+      RECHNUNGSAPP_PUBLIC_URL: ${RECHNUNGSAPP_PUBLIC_URL:-http://localhost:8000}
+      RECHNUNGSAPP_HTTPS: ${RECHNUNGSAPP_HTTPS:-0}
+      RECHNUNGSAPP_PROXY: ${RECHNUNGSAPP_PROXY:-0}
+    volumes:
+      - ./data:/data
+    ports:
+      - "${RECHNUNGSAPP_PORT:-8000}:8000"

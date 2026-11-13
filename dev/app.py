@@ -18,9 +18,17 @@ from xml.sax.saxutils import escape as xml_escape
 import auth
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "rechnungsapp.db")
+# Persistente Daten (DB + secret.key) liegen im Docker-Betrieb in einem Volume (RECHNUNGSAPP_DATA_DIR)
+DATA_DIR = os.environ.get("RECHNUNGSAPP_DATA_DIR", BASE_DIR)
+os.makedirs(DATA_DIR, exist_ok=True)
+DB_PATH = os.path.join(DATA_DIR, "rechnungsapp.db")
 
 app = Flask(__name__)
+
+# Hinter genau einem Reverse Proxy (Caddy): echte Client-IP/Schema aus X-Forwarded-* übernehmen
+if os.environ.get("RECHNUNGSAPP_PROXY") == "1":
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 DEFAULT_SETTINGS = {
     "company_name": "",
@@ -216,7 +224,7 @@ def fmt_date_de(s):
         return s
 
 
-auth.init_auth(app, get_db, BASE_DIR)
+auth.init_auth(app, get_db, DATA_DIR)
 
 
 @app.context_processor
@@ -856,6 +864,8 @@ def settings_view():
 import mcp_server  # noqa: E402
 
 mcp_server.init_mcp(app, sys.modules[__name__])
+
+init_db()  # auch beim Start über gunicorn (Schema/Migrationen sind idempotent)
 
 
 if __name__ == "__main__":

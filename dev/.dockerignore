@@ -1,0 +1,11 @@
+.venv
+__pycache__
+*.pyc
+*.db
+secret.key
+test_mcp.py
+start.ps1
+Dockerfile
+docker-compose.yml
+.dockerignore
+data/
