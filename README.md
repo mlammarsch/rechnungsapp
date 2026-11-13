@@ -2,6 +2,31 @@
 
 Webanwendung zur Rechnungsstellung (Flask, SQLite, PDF-Export) mit Einzelbenutzer-Login und einem MCP-Endpunkt (`/mcp`) fuer KI-Assistenten.
 
+## Funktionalitaet
+
+Die Rechnungsapp bietet eine vollstaendige, webbasierte Loesung zur Rechnungsverwaltung:
+
+### Rechnungsverwaltung
+- **Rechnungen erstellen & verwalten:** Erfasse neue Rechnungen mit Positionen (Beschreibung, Menge, Einzelpreis)
+- **Kundenverwaltung:** Speichere Kundendetails (Name, Adresse, E-Mail, Steuernummer)
+- **PDF-Export:** Exportiere Rechnungen als professionelle PDF-Dokumente mit eigenem Logo und Texten
+- **Rechnungsarchiv:** Uebersicht aller erstellten Rechnungen mit Suchfunktion und Status-Verwaltung
+
+### Sicherheit & Zugang
+- **Einzelbenutzer-Login:** Passwortgeschuetzter Zugang (mindestens 12 Zeichen)
+- **Session-Management:** Sichere Cookie-basierte Sitzungen mit optionalem HTTPS
+- **Login-Rate-Limiting:** Schutz vor Brute-Force-Attacken (IPs nach Versuchen blockiert)
+
+### Integration
+- **MCP (Model Context Protocol):** REST-API fuer KI-Assistenten und externe Tools
+- **API-Token-Verwaltung:** Granulare Zugriffskontrolle (read/full, Ablaufdaten)
+- **Automatisiertes Reporting:** Daten abrufbar fuer externe Systeme
+
+### Verwaltung
+- **Einstellungen & Konfiguration:** Firmendetails, Zahlungsbedingungen, Steuersaetze lokal anpassen
+- **Datensicherung:** Ein-Kommando-Backup der SQLite-Datenbank
+- **Multi-Environment-Support:** Lokal entwickeln, produktiv in Docker deployen
+
 ## Schnellstart mit Docker
 
 Voraussetzung: Docker mit Compose.
