@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(curl -s -X POST -H 'Authorization: Bearer ra_GhbgCBdkplplazkepabcRbs-TOoZAzYKOq6RlY45nxw' -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{\"name\":\"search\",\"arguments\":{\"query\":\"Gemeindebücherei Heroldstatt\"}}}' https://rechnungsapp.mlammarsch.de/mcp)"
-    ]
-  }
-}
