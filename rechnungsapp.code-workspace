@@ -4,5 +4,10 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"claudeCode.spinnerVerbs": {
+			"mode": "append",
+			"verbs": []
+		}
+	}
 }
