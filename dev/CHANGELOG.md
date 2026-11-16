@@ -2,8 +2,9 @@
 
 Neueste Version zuerst. Die aktuelle Version steht in der Datei `VERSION` und wird im Fuß der App angezeigt.
 
-## 1.2.0 – in Arbeit
+## 1.2.0 – 2026-11-16
 
+- Sicherheit: API-Token liegt nicht mehr in den Claude-Settings, sondern in einer lokalen `.env` (Variable `RECHNUNGSAPP_TOKEN`); `.env`, `.claude/` und `.mcp.json` sind in der `.gitignore` gesperrt, `.env.example` dient als Vorlage. Der README beschreibt das Einrichten. Der bisher verwendete Token muss widerrufen und neu erzeugt werden.
 - Hell/Dunkel-Schalter mit Outline-Icons (Sonne/Mond) nebeneinander; der aktive Modus ist hervorgehoben.
 - Fehlerkorrektur: Die Stylesheet-Datei wird mit einer Versionsnummer eingebunden, damit der Browser nach einem Update nicht mehr das alte Aussehen aus dem Cache zeigt (z. B. unformatierte Versionsnummer im Seitenfuß).
 - Experimente mit einem Wisch-Seitenmenü und Karten-Listen für die Handy-Ansicht wurden verworfen; es bleibt bei der Ansicht aus 1.1.0.

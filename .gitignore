@@ -46,3 +46,9 @@ secret.key
 # OS
 .DS_Store
 Thumbs.db
+
+# Claude Code (enthaelt lokale Settings/Secrets)
+.claude/
+.mcp.json
+.env.*
+!.env.example

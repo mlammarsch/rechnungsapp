@@ -113,6 +113,22 @@ Unter `/account` in der Weboberflaeche lassen sich API-Tokens erzeugen (Geltungs
 }
 ```
 
+### Token fuer Claude Code / lokale Skripte (`.env`)
+
+Wer die MCP-Schnittstelle aus Claude Code oder eigenen Skripten nutzt, legt den Token **nicht** in Settings-Dateien ab, sondern in einer lokalen `.env` im Projektordner:
+
+```bash
+cp .env.example .env     # Windows: copy .env.example .env
+```
+
+Danach in `.env` den unter `/account` erzeugten Token eintragen:
+
+```
+RECHNUNGSAPP_TOKEN=ra_...
+```
+
+Die Datei ist ueber `.gitignore` gesperrt und darf nie eingecheckt werden (ebenso `.claude/` und `.mcp.json`). In Befehlen und Berechtigungen wird nur die Variable `$RECHNUNGSAPP_TOKEN` verwendet, nie der Klartext-Token. Die Variable muss in der Shell gesetzt sein, die `.env` wird nicht automatisch geladen (z. B. `set -a; source .env; set +a` in Bash).
+
 ## Passwort vergessen
 
 ```bash
