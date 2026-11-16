@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Release Notes{% endblock %}
+{% block content %}
+<h1>Release Notes</h1>
+<p class="hint">Aktuell online: <b>Version {{ app_version }}</b></p>
+{% for r in releases %}
+<div class="card" style="margin-bottom:1.2rem">
+  <h2>{{ r.title }}</h2>
+  <ul>
+    {% for i in r['items'] %}<li>{{ i }}</li>{% endfor %}
+  </ul>
+</div>
+{% else %}
+<div class="card"><p>Keine Release Notes vorhanden.</p></div>
+{% endfor %}
+{% endblock %}
